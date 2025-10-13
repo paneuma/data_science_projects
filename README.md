@@ -1,7 +1,7 @@
 Hello!
 
-This is a simple repository for learning and teaching projects and examples. 
-Each file is sourced from some version of a training module--could be ChatGPT5, HarvardX lessons (here: https://rafalab.dfci.harvard.edu/pages/harvardx.html), or some other source. 
-These files will also contain many of my own custom lines, which I've essentially used as tests or expansions just to make sure that I fully understand the syntax, operation, and limits of the functions and of the code functions contained within. 
+This is a simple repository for examples of learning projects I've coded and created. This is not an exhaustive list of projects, but a simple sample list. 
+My lessons and topics are sourced from ChatGPT, Gemini, HarvardX lessons (here: https://rafalab.dfci.harvard.edu/pages/harvardx.html), or some combination thereof.  
+These files contain many of my own custom lines, which I've essentially added as tests to make sure I fully understand the syntax, operation, and limits of the functions and processes.  
 
-This work is on-going and represents a personal project for me to expand my knowledge of Python, R, and data analysis pipelines in general. It additionally serves as a way for me to understand the full functionality of github.
+My progress in learning these languages and workflows is on-going and represents a personal project for me to expand my knowledge of Python, R, and data analysis pipelines in general. It additionally serves as a way for me to understand the full functionality of github.
