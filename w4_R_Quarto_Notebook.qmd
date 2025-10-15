@@ -1,0 +1,159 @@
+---
+title: "w4_R_Quarto_Notebook"
+format: html
+editor: visual
+---
+
+```{r}
+# arrows are traditionally used as "=" in R 
+# Everything is output to the console, not the output window
+ 
+x <- 5 
+y <- 7
+x + y
+```
+
+```{r}
+install.packages(c("tidyverse", "readxl", "janitor", "ggpubr"))
+
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(ggpubr)
+
+```
+
+```{r}
+# read my .csv PCR data file generated previously (from readxl library package)
+df <- read_csv("E:/DATA_SCIENCE/Projects/qPCR_gene_expression.csv")
+
+glimpse(df)
+head(df)
+
+# pipes (%>%) are instruction to use the left variable as the first argument for what's on the right/after. 
+# Useful for keeping complex multi-step operations more readable and more easily expandible 
+df %>%
+  summarise(
+    mean_dCt = mean(dCt, na.rm = TRUE),
+    sd_dCt   = sd(dCt, na.rm = TRUE),
+    mean_fc  = mean(fold_change, na.rm = TRUE),
+    sd_fc    = sd(fold_change, na.rm = TRUE)
+  )
+  
+# "mutate" or add columns to an existing (or imported) df
+# case_when() == if 
+  df <- df %>%
+  mutate(
+    regulation_r = case_when(
+      fold_change > 1.1  ~ "Upregulated",
+      fold_change < 0.9  ~ "Downregulated",
+      TRUE               ~ "No change"
+    )
+  )
+
+# use ggplot to make a bar graph of the "fold_change" column, and use the new regulation_R index to color code the bars appropriately
+ggplot(df, aes(x = Gene, y = fold_change, fill = regulation_r)) +
+  geom_col() +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray") +
+  theme_minimal() +
+  labs(title = "Fold Change by Gene", y = "Fold Change (2^-ΔΔCt)")
+
+df <- clean_names(df)
+
+# new df_high includes only genes with >1.2 fold-change
+# df_high <- df %>% filter(fold_change > 1.2)
+
+# Multiple conditions with AND / OR
+# & for AND, | for OR, and ! for NOT
+df_high <- df %>% filter(fold_change > 1.2 | fold_change < 0.8)
+
+df %>% select(gene, fold_change)
+# Exclude columns (use a minus sign)
+df %>% select(-ct_control, -ct_treated)
+
+# sort by fold_change
+df_sorted <- df %>% arrange(desc(fold_change))
+
+# use summarize function 
+# na.rm instructs to skip over any missing values to avoid errors
+df_summary <- df %>%
+  group_by(gene) %>%
+  summarise(
+    mean_fc = mean(fold_change, na.rm = TRUE),
+    sd_fc   = sd(fold_change, na.rm = TRUE)
+  )
+
+View(df) #Nice data visualization and summary of the df in a new popup window (always capital V for View)
+write_csv(df, "E:/DATA_SCIENCE/Projects/w4_PCR_results_R.csv")
+
+```
+
+```{r}
+#w4d3 exercises: more visualizations with ggplot2
+glimpse(df)    # glimpse() → compact column/structure preview
+
+df <- df %>%   # Add the mean_fc and sd_fc columns
+  mutate(
+    mean_fc = mean(fold_change, na.rm = TRUE),         # adds a mean_fc for the full data set (the same value to each gene... why?)
+    sd_fc   = runif(n(), min = 0.05, max = 0.2)        # runif() → generate random SD values between 0.05–0.2 to simuiate the sd because there are no replicates in this set
+  )
+
+ggplot(df, aes(x = gene, y = fold_change)) +        # ggplot() → init plot; aes() = aesthetic mappings
+  geom_col(fill = "steelblue") +                        # geom_col() → solid bars for y values
+  geom_errorbar(aes(ymin = fold_change - sd_fc,             # geom_errorbar() → vertical error bars
+                    ymax = fold_change + sd_fc),
+                width = 0.2) +                          # width → horizontal cap size on bars
+  geom_hline(yintercept = 1, linetype = "dashed",       # geom_hline() → dashed reference line at y = 1
+             color = "gray40") +
+  theme_minimal() +                                     # theme_minimal() → clean background
+  labs(title = "Fold Change ± SD",                 # labs() → axis titles, legend text, etc.
+       x = "Gene", y = "Fold Change (2^-ddCt)")
+
+#Same plot, but now with color-coded bars based on up or down change
+ggplot(df, aes(x = gene, y = fold_change, fill = regulation_r)) +   # fill=reg_r → color by regulation
+  geom_col() +                                                      # need to call an empty column command here so that it can be filled later by scale_fill_manual 
+  geom_errorbar(aes(ymin = fold_change - sd_fc, ymax = fold_change + sd_fc),
+                width = 0.15) +
+  geom_hline(yintercept = 1, linetype = "dashed",       # geom_hline() → dashed reference line at y = 1
+             color = "gray40") +
+  scale_fill_manual(values = c("Upregulated" = "#d73027",              # scale_fill_manual() → custom colors
+                               "Downregulated" = "#4575b4",
+                               "No change" = "gray70")) +
+  geom_text(aes(y = fold_change + sd_fc, label = paste(round(fold_change, 2), "±", round(sd_fc, 2))),               # geom_text() → place text labels above the bar + the sd value
+            vjust = -1, size = 4) +                   # vjust → additional slight vertical offset for readability; size → text size                              
+  theme_minimal() +
+  expand_limits(y = max(df$fold_change + df$sd_fc) * 1.10) +     # adds 10% more extra space above the highest bar to avoid cutting off the bar geom_text
+  labs(title = "Gene Expression Changes (random SD)",  y = "Fold Change (2^-ddCt)", x = "Gene", fill = "Regulation")
+
+
+ggsave("E:/DATA_SCIENCE/Projects/w4_gene_foldchange_plot_r.png",   # ggsave() → exports last plot
+       width = 6, height = 4, dpi = 300)                      # width/height in inches; dpi = resolution
+
+
+```
+
+```{r}
+#w4d4: Data Cleaning and Summarization for Reports (I already did this above though...)
+
+df <- df %>%
+  mutate(
+    fold_change = if_else(is.na(fold_change), 1, fold_change)  # if_else() → replace NAs with 1
+  )
+df <- drop_na(df)                                              # drop_na() → remove rows with any NA
+df <- clean_names(df)                                          # clean_names() → standardize headers (snake_case)
+
+#(The whole gene set is used essentially as a single bar with repeat values here...)
+df_sum <- df %>%                                           
+  group_by(gene) %>%                                           # group_by() → split by gene
+  summarise(
+    mean_fc = mean(fold_change, na.rm = TRUE),                 # summarise() → collapse into stats
+    sd_fc   = sd(fold_change, na.rm = TRUE),
+    n       = n(),                                             # n() → count rows per group
+    sem_fc  = sd_fc / sqrt(n)                                  # SEM = SD / √n
+  )
+
+write_csv(df_sum, "E:/DATA_SCIENCE/Projects/w4_PCR_summary_clean_r.csv")        # write_csv() → save .csv
+ggsave("E:/DATA_SCIENCE/Projects/w4_PCR_plot_test_r.pdf", width = 6, height = 4)    # ggsave() → export plot
+
+
+```
