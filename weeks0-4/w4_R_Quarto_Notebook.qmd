@@ -20,12 +20,14 @@ library(tidyverse)
 library(readxl)
 library(janitor)
 library(ggpubr)
+library(knitr)
+library(ggplot2)
 
 ```
 
 ```{r}
 # read my .csv PCR data file generated previously (from readxl library package)
-df <- read_csv("E:/DATA_SCIENCE/Projects/qPCR_gene_expression.csv")
+df <- read_csv("E:/DATA_SCIENCE/Projects/weeks0-4/qPCR_gene_expression.csv")
 
 glimpse(df)
 head(df)
@@ -84,7 +86,7 @@ df_summary <- df %>%
   )
 
 View(df) #Nice data visualization and summary of the df in a new popup window (always capital V for View)
-write_csv(df, "E:/DATA_SCIENCE/Projects/w4_PCR_results_R.csv")
+write_csv(df, "E:/DATA_SCIENCE/Projects/weeks0-4/w4_PCR_results_R.csv")
 
 ```
 
@@ -114,9 +116,9 @@ ggplot(df, aes(x = gene, y = fold_change, fill = regulation_r)) +   # fill=reg_r
   geom_col() +                                                      # need to call an empty column command here so that it can be filled later by scale_fill_manual 
   geom_errorbar(aes(ymin = fold_change - sd_fc, ymax = fold_change + sd_fc),
                 width = 0.15) +
-  geom_hline(yintercept = 1, linetype = "dashed",       # geom_hline() → dashed reference line at y = 1
+  geom_hline(yintercept = 1, linetype = "dashed",       # geom_hline() → add dashed reference line at y = 1
              color = "gray40") +
-  scale_fill_manual(values = c("Upregulated" = "#d73027",              # scale_fill_manual() → custom colors
+  scale_fill_manual(values = c("Upregulated" = "#d73027",              # scale_fill_manual() → custom color calls
                                "Downregulated" = "#4575b4",
                                "No change" = "gray70")) +
   geom_text(aes(y = fold_change + sd_fc, label = paste(round(fold_change, 2), "±", round(sd_fc, 2))),               # geom_text() → place text labels above the bar + the sd value
@@ -126,7 +128,7 @@ ggplot(df, aes(x = gene, y = fold_change, fill = regulation_r)) +   # fill=reg_r
   labs(title = "Gene Expression Changes (random SD)",  y = "Fold Change (2^-ddCt)", x = "Gene", fill = "Regulation")
 
 
-ggsave("E:/DATA_SCIENCE/Projects/w4_gene_foldchange_plot_r.png",   # ggsave() → exports last plot
+ggsave("E:/DATA_SCIENCE/Projects/weeks0-4/w4_gene_foldchange_plot_r.png",   # ggsave() → exports last plot
        width = 6, height = 4, dpi = 300)                      # width/height in inches; dpi = resolution
 
 
@@ -152,8 +154,25 @@ df_sum <- df %>%
     sem_fc  = sd_fc / sqrt(n)                                  # SEM = SD / √n
   )
 
-write_csv(df_sum, "E:/DATA_SCIENCE/Projects/w4_PCR_summary_clean_r.csv")        # write_csv() → save .csv
-ggsave("E:/DATA_SCIENCE/Projects/w4_PCR_plot_test_r.pdf", width = 6, height = 4)    # ggsave() → export plot
+# save summarized table as .csv and plot as .pdf file
+write_csv(df_sum, "E:/DATA_SCIENCE/Projects/weeks0-4/w4_PCR_summary_clean_r.csv")        # write_csv() → save .csv
+ggsave("E:/DATA_SCIENCE/Projects/weeks0-4/w4_PCR_plot_test_r.pdf", width = 6, height = 4)    # ggsave() → export plot
+
+# uses kable() command from knitr library to make a nicer table format in the console output
+df_sum %>%
+  arrange(desc(mean_fc)) %>%                             # arrange() → sort by mean_fc descending
+  select(gene, mean_fc, sd_fc, sem_fc, n) %>%
+  knitr::kable(digits = 2, caption = "Fold Change Summary")  # kable() → neat Markdown table
+
+#assign the df plot to p using ggplot, and apply the steelblue theme color
+p <- ggplot(df, aes(x = gene, y = fold_change)) +
+  geom_col(fill = "steelblue") +
+  theme_minimal()
+
+# uses ggpubr to call/display a plot of df.fold_change--but now processed by ggplot and ggpubr formating options
+p + theme_pubr(base_size = 14) + 
+  font("x", size = 16, face = "bold") +
+  font("y", size = 16, face = "bold")                                         # theme_pubr() → journal-style theme
 
 
 ```
