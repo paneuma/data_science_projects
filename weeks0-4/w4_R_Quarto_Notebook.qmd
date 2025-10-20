@@ -169,7 +169,7 @@ p <- ggplot(df, aes(x = gene, y = fold_change)) +
   geom_col(fill = "steelblue") +
   theme_minimal()
 
-# uses ggpubr to call/display a plot of df.fold_change--but now processed by ggplot and ggpubr formating options
+# use ggpubr to call/display a plot of df.fold_change--now processed by ggplot and ggpubr formating options
 p + theme_pubr(base_size = 14) + 
   font("x", size = 16, face = "bold") +
   font("y", size = 16, face = "bold")                                         # theme_pubr() → journal-style theme
